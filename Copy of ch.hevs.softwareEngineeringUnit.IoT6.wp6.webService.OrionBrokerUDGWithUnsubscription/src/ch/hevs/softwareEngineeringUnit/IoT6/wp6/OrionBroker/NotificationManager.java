@@ -1,5 +1,7 @@
 package ch.hevs.softwareEngineeringUnit.IoT6.wp6.OrionBroker;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -12,14 +14,22 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import ch.hevs.softwareEngineeringUnit.IoT6.wp6.dataStructures.SubscriptionRegister;
-import ch.hevs.softwareEngineeringUnit.IoT6.wp6.parsingManagement.ParsingComfortCommandThread;
+import ch.hevs.softwareEngineeringUnit.IoT6.wp6.parsingManagement.ParsingRoomModeThread;
 import ch.hevs.softwareEngineeringUnit.IoT6.wp6.parsingManagement.ParsingPatientMovementsThread;
 
 @Path("/notificationManager")
 public class NotificationManager {
+	
+	private static AtomicBoolean subscriptionToMovement;
+	private static String storedSubscriptionId;
+	
+	public NotificationManager(){
+		System.out.println("Constructor");
+//		subscriptionToMovement = new AtomicBoolean(false);
+//		storedSubscriptionId = "empty";
+	}
 
-	@Path("/patientMovements")
+	@Path("/participantPosition")
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response getPatientMovements(String jsonString){
@@ -31,17 +41,15 @@ public class NotificationManager {
 		
 		try {
 			jsonObject = (JSONObject) parser.parse(jsonString);
-			ParsingPatientMovementsThread parsingThread = new ParsingPatientMovementsThread(jsonObject);
-			parsingThread.run();
+			new Thread(new ParsingPatientMovementsThread(this, jsonObject)).start();
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 		return Response.status(201).entity("OK").build();
 	}
 	
-	@Path("/comfortCommand")
+	@Path("/roomMode")
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response getComfortCommand(String jsonString){
@@ -53,8 +61,7 @@ public class NotificationManager {
 		
 		try {
 			jsonObject = (JSONObject) parser.parse(jsonString);
-			ParsingComfortCommandThread parsingThread = new ParsingComfortCommandThread(jsonObject);
-			parsingThread.run();
+			new Thread(new ParsingRoomModeThread(this, jsonObject)).start();
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -75,7 +82,7 @@ public class NotificationManager {
 	@Path("getSubscription")
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response getSubscription(String jsonString){
+/*	public Response getSubscription(String jsonString){
 		
 		JSONParser parser = new JSONParser();
 		JSONObject object = null;
@@ -102,6 +109,34 @@ public class NotificationManager {
 		return Response.status(201).entity(subscriptionId).build();
 		
 	}
+*/	
+	
+	public synchronized void setSubscriptionToMovementValue(boolean value){
+		
+		System.out.println(subscriptionToMovement.get());
+		System.out.println("SetTheValueOfTheSubscription");
+		
+		subscriptionToMovement.getAndSet(value);
+		
+		System.out.println(subscriptionToMovement.get());
+	}
 
+	public synchronized boolean getSubscriptionToMovementValue(){
+		
+		if(subscriptionToMovement == null){
+			System.out.println("Subscription is null");
+			subscriptionToMovement = new AtomicBoolean(false);
+		}
+		
+		return subscriptionToMovement.get();
+	}
+	
+	public synchronized void setSubscriptionId(String subscriptionId){
+		storedSubscriptionId = subscriptionId;
+	}
+	
+	public synchronized String getSubscriptionId(){
+		return storedSubscriptionId;
+	}
 	
 }

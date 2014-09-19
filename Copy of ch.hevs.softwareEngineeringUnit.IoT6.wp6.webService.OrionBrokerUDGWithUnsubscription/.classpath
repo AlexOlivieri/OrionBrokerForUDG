@@ -11,5 +11,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/ch.hevs.se.IoT6.T6_5.OrionInterfaceOfficialVersion"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/asm-3.1.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

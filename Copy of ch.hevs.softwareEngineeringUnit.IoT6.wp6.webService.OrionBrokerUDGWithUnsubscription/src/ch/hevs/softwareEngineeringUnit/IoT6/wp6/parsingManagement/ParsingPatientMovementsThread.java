@@ -33,99 +33,80 @@ public class ParsingPatientMovementsThread implements Runnable{
 
 		String subscriptionId = (String) notification.get("subscriptionId");
 		
-		if(notificationManager.getSubscriptionToMovementValue() == false){
-			unsubscribe();
-			
-		}else{
+		if(notificationManager.getSubscriptionId() ==null || notificationManager.getSubscriptionId().equals("empty")){
+			notificationManager.setSubscriptionId(subscriptionId);
+		}
 		
-			JSONArray contextResponsesArray = (JSONArray) notification.get("contextResponses");
-			JSONObject contextResponsesElement = new JSONObject();
-			
-			//JSONObject statusCode = new JSONObject();
-			JSONObject contextElements = new JSONObject();
-			
-			JSONArray attributesArray = new JSONArray();
-			JSONObject attributeElement = new JSONObject();
-			
-			//String attributeName = "";
-			
-			String id = "";
-			String attributeName = "";
-			String attributeContextValue = "";
-			String elementType = "";
-			
-			String subscriptionName = "";
-			
 		
-			
-			if(contextResponsesArray != null){
-			
-				Iterator<JSONObject> contextResponsesIterator = contextResponsesArray.iterator();
-				while (contextResponsesIterator.hasNext()) {
+		JSONArray contextResponsesArray = (JSONArray) notification.get("contextResponses");
+		JSONObject contextResponsesElement = new JSONObject();
+		
+		//JSONObject statusCode = new JSONObject();
+		JSONObject contextElements = new JSONObject();
+		
+		JSONArray attributesArray = new JSONArray();
+		JSONObject attributeElement = new JSONObject();
+		
+		//String attributeName = "";
+		
+		String id = "";
+		String attributeName = "";
+		String attributeContextValue = "";
+		String elementType = "";
+		
+		String subscriptionName = "";
+		
+	
+		
+		if(contextResponsesArray != null){
+		
+			Iterator<JSONObject> contextResponsesIterator = contextResponsesArray.iterator();
+			while (contextResponsesIterator.hasNext()) {
+				
+				contextResponsesElement = contextResponsesIterator.next();
+				
+				contextElements = (JSONObject) contextResponsesElement.get("contextElement");
+				
+				id = (String) contextElements.get("id");
+				elementType = (String) contextElements.get("type");
+				
+				attributesArray = (JSONArray) contextElements.get("attributes");
+				
+				if(attributesArray != null){
 					
-					contextResponsesElement = contextResponsesIterator.next();
+					Iterator<JSONObject> attributeIterator = attributesArray.iterator();
 					
-					contextElements = (JSONObject) contextResponsesElement.get("contextElement");
+					Date d = new Date();
+					spreadsheet.setCell(1, 1, d.toGMTString());
 					
-					id = (String) contextElements.get("id");
-					elementType = (String) contextElements.get("type");
+					int cellRow = 1;
 					
-					attributesArray = (JSONArray) contextElements.get("attributes");
+					CellEntry lastCellOccupied = spreadsheet.findLastOccupiedCell();
+					if(lastCellOccupied != null){
+						cellRow = lastCellOccupied.getCell().getRow();
+					}
 					
-					if(attributesArray != null){
+					////////////////////
+					/////
+					///// For testing purpose
+					/////
+					////////////////////
+					
+					while (attributeIterator.hasNext()) {
 						
-						Iterator<JSONObject> attributeIterator = attributesArray.iterator();
+						attributeElement = attributeIterator.next();
 						
-						Date d = new Date();
-						spreadsheet.setCell(1, 1, d.toGMTString());
 						
-						int cellRow = 1;
+						attributeName = (String) attributeElement.get("name");
+						attributeContextValue = (String) attributeElement.get("value");	
 						
-						CellEntry lastCellOccupied = spreadsheet.findLastOccupiedCell();
-						if(lastCellOccupied != null){
-							cellRow = lastCellOccupied.getCell().getRow();
-						}
+						System.out.println(notificationManager.getSubscriptionId());
 						
 						spreadsheet.setCell(cellRow+1, 1,"Subscripion from Notification");
 						spreadsheet.setCell(cellRow+1, 4,subscriptionId);
-						
-						while (attributeIterator.hasNext()) {
-							
-							attributeElement = attributeIterator.next();
-							
-							
-							attributeName = (String) attributeElement.get("name");
-							attributeContextValue = (String) attributeElement.get("value");						
-	
-							
-						}
 					}
 				}
 			}
 		}
-	}
-	
-	private void unsubscribe(){
-		
-		String url = "http://130.206.82.228:1026/NGSI10";
-		
-		SubscriberEntity subscriberEntity = new SubscriberEntity();
-		WebResource webResource = subscriberEntity.connectEntity(url);
-		
-		String subscriptionId = notificationManager.getSubscriptionId();
-		unsubscribe(subscriberEntity, webResource, subscriptionId);
-		
-		
-		
-	}
-	
-	private void unsubscribe(SubscriberEntity subscriberEntity, WebResource webResource, String subscriptionId){
-		
-		UnsubscriptionData unsubscriptionData = new UnsubscriptionData();
-		unsubscriptionData.setSubscriptionToBeDeleted(subscriptionId);
-		JSONObject contextPayload = unsubscriptionData.getData();
-		
-		subscriberEntity.unsubscribe(webResource, "unsubscribeContext", contextPayload);
-		
 	}
 }
